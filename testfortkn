@@ -1,0 +1,21 @@
+# Example file for testing GitHub Advanced Security Secret Scanning
+
+# Fake AWS Access Key ID
+AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+
+# Fake AWS Secret Access Key
+AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+
+# Fake API Token
+API_TOKEN=12345abcdef67890ghijk12345lmnopqr67890
+
+# Fake Database Credentials
+DB_USERNAME=admin
+DB_PASSWORD=SuperSecret123
+
+# Fake Personal Access Token
+GITHUB_TOKEN=ghp_1234567890abcdefghijklmnopqrstuvwxyzABC
+
+# Note:
+# These are not real secrets and should not be used in any application or system.
+# The purpose of this file is solely to test GitHub Secret Scanning capabilities.
