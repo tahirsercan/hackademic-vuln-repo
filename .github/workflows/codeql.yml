@@ -24,8 +24,6 @@ jobs:
         include:
         - language: javascript-typescript
           build-mode: none
-        - language: php
-          build-mode: none
         # Add additional languages here as needed
 
     steps:
