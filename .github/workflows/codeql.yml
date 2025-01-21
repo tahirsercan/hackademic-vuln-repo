@@ -1,23 +1,53 @@
-name: Create Issue for CodeQL Alerts
+name: Create Issues with Labels for CodeQL Alerts
+
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
+
 jobs:
-  create-issue:
+  analyze-and-label:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Code
+      # 1. Depoyu Kopyala
+      - name: Checkout Repository
         uses: actions/checkout@v4
+
+      # 2. CodeQL Analizini Başlat
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+          build-mode: none
 
       - name: Run CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
-          category: "frontend-security"
+          category: "frontend-security" # Kategori burada ayarlanıyor
 
-      - name: Create GitHub Issue for Alerts
-        uses: peter-evans/create-issue-from-file@v4
-        with:
-          title: "CodeQL Alert - Frontend Security"
-          content-filepath: alert_output.txt
-          labels: "frontend-security"
+      # 3. CodeQL Sonuçlarını Al ve Etiketle
+      - name: Fetch CodeQL Alerts
+        run: |
+          mkdir -p results
+          # Tüm CodeQL uyarılarını çekiyoruz
+          gh api -H "Accept: application/json" \
+            /repos/${{ github.repository }}/code-scanning/alerts \
+            > results/alerts.json
+
+          # Uyarıları frontend-security etiketiyle ilişkilendir
+          jq -r '.[] | select(.rule.id | contains("frontend-security")) | {rule_id, message, severity, url}' \
+            results/alerts.json > results/frontend-security-alerts.json
+
+      # 4. GHAS Alerts'e Label Ekle
+      - name: Apply Labels to Alerts
+        run: |
+          while read -r alert; do
+            alert_url=$(echo "$alert" | jq -r '.url')
+            gh issue create --title "Frontend Security Alert" \
+                            --body "$alert" \
+                            --label "frontend-security"
+          done < results/frontend-security-alerts.json
