@@ -24,6 +24,8 @@ jobs:
         include:
         - language: javascript-typescript
           build-mode: none
+        - language: python
+          build-mode: none
         # Add additional languages here as needed
 
     steps:
@@ -49,4 +51,4 @@ jobs:
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
       with:
-        category: "/language:${{ matrix.language }}"
+        category: "securityspec"  # Burada kategori "securityspec" olarak belirleniyor
