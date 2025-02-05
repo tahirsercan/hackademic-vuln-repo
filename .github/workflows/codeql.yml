@@ -89,13 +89,14 @@ jobs:
       - name: Run jscpd on changed files
         run: |
           if [ -n "${{ steps.changed-files.outputs.all_changed_files }}" ]; then
-            echo "Changed files: ${{ steps.changed-files.outputs.all_changed_files }}"
-            jscpd \
-              --min-tokens 10 \  
-              --threshold 1 \    
-              --reporters console \
-              --ignore "**/generated/**" \  
-              --ignore-identifiers \  
-              ${{ steps.changed-files.outputs.all_changed_files }}
+              echo "Changed files: ${{ steps.changed-files.outputs.all_changed_files }}"
+             jscpd \
+              --min-tokens 10 \
+              --threshold 1 \
+              --ignore-identifiers \
+             --reporters console \
+             --ignore "**/generated/**" \
+            "${{ steps.changed-files.outputs.all_changed_files }}"
           else
             echo "No files changed. Skipping duplication check."
+         fi
