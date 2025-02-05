@@ -62,14 +62,12 @@ jobs:
           fail-on-severity: high
           comment-summary-in-pr: on-failure    
 
-  duplication-check:  # ⚠️ BU JOB BAĞIMSIZ OLMALIYDI, ARTIK DÜZGÜN HİZALANDI
-    name: Detect Code Duplication
+  duplication-check: 
     runs-on: ubuntu-latest
+    needs: analyze 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -89,14 +87,14 @@ jobs:
       - name: Run jscpd on changed files
         run: |
           if [ -n "${{ steps.changed-files.outputs.all_changed_files }}" ]; then
-              echo "Changed files: ${{ steps.changed-files.outputs.all_changed_files }}"
-             jscpd \
+            echo "Changed files: ${{ steps.changed-files.outputs.all_changed_files }}"
+            jscpd \
               --min-tokens 10 \
               --threshold 1 \
               --ignore-identifiers \
-             --reporters console \
-             --ignore "**/generated/**" \
-            "${{ steps.changed-files.outputs.all_changed_files }}"
+              --reporters console \
+              --ignore "**/generated/**" \
+              "${{ steps.changed-files.outputs.all_changed_files }}" 
           else
             echo "No files changed. Skipping duplication check."
-         fi
+          fi 
