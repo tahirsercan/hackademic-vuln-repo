@@ -11,13 +11,10 @@ on:
 jobs:
   analyze-and-label:
     runs-on: ubuntu-latest
-
     steps:
-      # 1. Depoyu Kopyala
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. CodeQL Analizini Başlat
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
@@ -29,20 +26,16 @@ jobs:
         with:
           category: "frontend-security" # Kategori burada ayarlanıyor
 
-      # 3. CodeQL Sonuçlarını Al ve Etiketle
       - name: Fetch CodeQL Alerts
         run: |
           mkdir -p results
-          # Tüm CodeQL uyarılarını çekiyoruz
           gh api -H "Accept: application/json" \
             /repos/${{ github.repository }}/code-scanning/alerts \
             > results/alerts.json
 
-          # Uyarıları frontend-security etiketiyle ilişkilendir
           jq -r '.[] | select(.rule.id | contains("frontend-security")) | {rule_id, message, severity, url}' \
             results/alerts.json > results/frontend-security-alerts.json
 
-      # 4. GHAS Alerts'e Label Ekle
       - name: Apply Labels to Alerts
         run: |
           while read -r alert; do
@@ -53,7 +46,7 @@ jobs:
           done < results/frontend-security-alerts.json
 
   dependency-review:
-    if: github.event_name == 'pull_request'  # Dependency Review sadece PR'de çalışacak
+    if: github.event_name == 'pull_request'
     name: Dependency Review
     runs-on: ubuntu-latest
     permissions:
@@ -67,42 +60,42 @@ jobs:
         uses: actions/dependency-review-action@v3
         with:
           fail-on-severity: high
-          comment-summary-in-pr: on-failure # Sadece başarısız olursa yorum ekle    
-duplication-check:
-  name: Detect Code Duplication
-  runs-on: ubuntu-latest
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Tüm commit geçmişini çek
+          comment-summary-in-pr: on-failure    
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
+  duplication-check:  # ⚠️ BU JOB BAĞIMSIZ OLMALIYDI, ARTIK DÜZGÜN HİZALANDI
+    name: Detect Code Duplication
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  
 
-    - name: Install jscpd
-      run: npm install -g jscpd
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
-    - name: Get changed files
-      id: changed-files
-      uses: tj-actions/changed-files@v44
-      with:
-        since: ${{ github.event.pull_request.base.sha }}
-        until: ${{ github.event.pull_request.head.sha }}
+      - name: Install jscpd
+        run: npm install -g jscpd
 
-    - name: Run jscpd on changed files
-      run: |
-        if [ -n "${{ steps.changed-files.outputs.all_changed_files }}" ]; then
-          echo "Changed files: ${{ steps.changed-files.outputs.all_changed_files }}"
-          jscpd \
-            --min-tokens 10 \  # Daha küçük kod bloklarını tespit et
-            --threshold 1 \    # %1 duplication threshold
-            --reporters console \
-            --ignore "**/generated/**" \  # İgnore edilecek dosyalar
-            --ignore-identifiers \  # Değişken isimlerini ignore et
-            ${{ steps.changed-files.outputs.all_changed_files }}
-        else
-          echo "No files changed. Skipping duplication check."
-        fi
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          since: ${{ github.event.pull_request.base.sha }}
+          until: ${{ github.event.pull_request.head.sha }}
+
+      - name: Run jscpd on changed files
+        run: |
+          if [ -n "${{ steps.changed-files.outputs.all_changed_files }}" ]; then
+            echo "Changed files: ${{ steps.changed-files.outputs.all_changed_files }}"
+            jscpd \
+              --min-tokens 10 \  
+              --threshold 1 \    
+              --reporters console \
+              --ignore "**/generated/**" \  
+              --ignore-identifiers \  
+              ${{ steps.changed-files.outputs.all_changed_files }}
+          else
+            echo "No files changed. Skipping duplication check."
