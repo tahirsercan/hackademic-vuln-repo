@@ -63,7 +63,7 @@ jobs:
               --ignore-identifiers \
               --reporters console \
               --ignore "**/generated/**" \
-              ${{ steps.changed_files.outputs.all_changed_files }}
+              "${{ steps.changed-files.outputs.all_changed_files }}"
           else
             echo "No files changed. Skipping duplication check."
           fi
