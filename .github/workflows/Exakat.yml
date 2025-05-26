@@ -18,6 +18,12 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Debug: List /app directory contents
+        run: |
+          echo "Listing contents of /app:"
+          ls -RF /app
+          echo "End of /app listing."
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -28,16 +34,13 @@ jobs:
         run: |
           # Define the paths to your PHP code directories within the container's /app mount.
           # Adjust these paths if your PHP code is in different subdirectories.
-          # Based on your repo structure, common PHP directories are:
-          PHP_CODE_PATHS="-p /app/controller -p /app/model/common -p /app/pages -p /app/view -p /app/admin -p /app"
+          PHP_CODE_PATHS="-p /app/controller -p /app/model/common -p /app/pages -p /app/view -p /app/admin -p /app" # Keep these for now
 
           # Run Exakat analysis, passing all identified PHP code paths.
           docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat-ga:latest analyze ${PHP_CODE_PATHS} --json -o /app/exakat_report.json
 
           if [ -f exakat_report.json ]; then
             REPORT_SIZE=$(stat -c%s exakat_report.json)
-            # You might want to adjust this threshold based on what a valid, empty report size is for Exakat.
-            # If a successful analysis of empty code is very small, this check might need tweaking.
             if [ "$REPORT_SIZE" -lt 100 ]; then
               echo "Exakat raporu çok küçük, analizde sorun olabilir!"
               exit 1
@@ -57,9 +60,8 @@ jobs:
 
       - name: Generate HTML Report and Upload (Optional)
         run: |
-          # Use the same PHP_CODE_PATHS for generating the HTML report.
           docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat-ga:latest export ${PHP_CODE_PATHS} --html /app/exakat_report.html
-        if: always() # Attempt to generate report even if analysis failed
+        if: always()
 
       - name: Upload HTML Report (Optional)
         uses: actions/upload-artifact@v4
