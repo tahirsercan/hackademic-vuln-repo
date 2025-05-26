@@ -18,11 +18,11 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Debug: List /app directory contents # This step's name
-        run: | # This 'run:' should be indented exactly 8 spaces relative to the start of the line for 'name:'
-          echo "Listing contents of /app:"
-          ls -RF /app
-          echo "End of /app listing."
+      - name: Debug: List /app directory contents # Bu satır 6 boşlukla başlamalı
+        run: | # Bu satır 8 boşlukla başlamalı
+          echo "Listing contents of /app:" # Bu satır 10 boşlukla başlamalı
+          ls -RF /app # Bu satır 10 boşlukla başlamalı
+          echo "End of /app listing." # Bu satır 10 boşlukla başlamalı
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
