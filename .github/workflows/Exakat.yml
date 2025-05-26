@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - main
-      - next # <-- BURAYA EKLENDİ
+      - next
   pull_request:
     branches:
       - main
-      - next # <-- BURAYA EKLENDİ
+      - next
 
 jobs:
   exakat_analysis:
@@ -26,7 +26,11 @@ jobs:
       - name: Run Exakat Analysis
         id: exakat
         run: |
-          docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat:2.5.5 analyze -p /app --json -o /app/exakat_report.json
+          # --- NEW IMPORTANT CHANGE HERE ---
+          # Using exakat/exakat-ga:latest which is specifically for GitHub Actions
+          # and might handle multi-architecture better.
+          # We'll keep --platform and --pull always for robustness.
+          docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat-ga:latest analyze -p /app --json -o /app/exakat_report.json
 
           if [ -f exakat_report.json ]; then
             REPORT_SIZE=$(stat -c%s exakat_report.json)
@@ -49,7 +53,9 @@ jobs:
 
       - name: Generate HTML Report and Upload (Optional)
         run: |
-          docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat:2.5.5 export -p /app --html /app/exakat_report.html
+          # --- NEW IMPORTANT CHANGE HERE ---
+          # Also use exakat/exakat-ga:latest for the export command.
+          docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat-ga:latest export -p /app --html /app/exakat_report.html
         if: always()
 
       - name: Upload HTML Report (Optional)
