@@ -1,65 +1,65 @@
-name: PHP Code Analysis with Exakat # Bu satır 0 boşlukla başlar
+name: PHP Code Analysis with Exakat
 
-on: # Bu satır 0 boşlukla başlar
-  push: # Bu satır 2 boşlukla başlar
-    branches: # Bu satır 4 boşlukla başlar
-      - main # Bu satır 6 boşlukla başlar
-      - next # Bu satır 6 boşlukla başlar
-  pull_request: # Bu satır 2 boşlukla başlar
-    branches: # Bu satır 4 boşlukla başlar
-      - main # Bu satır 6 boşlukla başlar
-      - next # Bu satır 6 boşlukla başlar
+on:
+  push:
+    branches:
+      - main
+      - next
+  pull_request:
+    branches:
+      - main
+      - next
 
-jobs: # Bu satır 0 boşlukla başlar
-  exakat_analysis: # Bu satır 2 boşlukla başlar
-    runs-on: ubuntu-latest # Bu satır 4 boşlukla başlar
-    steps: # Bu satır 4 boşlukla başlar
-      - name: Checkout Code # Bu satır 6 boşlukla başlar
-        uses: actions/checkout@v4 # Bu satır 8 boşlukla başlar
+jobs:
+  exakat_analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - name: Debug: List /app directory contents # Bu satır 6 boşlukla başlar
-        run: | # Bu satır 8 boşlukla başlar
-          echo "Listing contents of /app:" # Bu satır 10 boşlukla başlar
-          ls -RF /app # Bu satır 10 boşlukla başlar
-          echo "End of /app listing." # Bu satır 10 boşlukla başlar
+      - name: Debug: List /app directory contents
+        run: |
+          echo "Listing contents of /app:"
+          ls -RF /app
+          echo "End of /app listing."
 
-      - name: Setup PHP # Bu satır 6 boşlukla başlar
-        uses: shivammathur/setup-php@v2 # Bu satır 8 boşlukla başlar
-        with: # Bu satır 8 boşlukla başlar
-          php-version: '8.2' # Bu satır 10 boşlukla başlar
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
 
-      - name: Run Exakat Analysis # Bu satır 6 boşlukla başlar
-        id: exakat # Bu satır 8 boşlukla başlar
-        run: | # Bu satır 8 boşlukla başlar
-          PHP_CODE_PATHS="-p /app/controller -p /app/model/common -p /app/pages -p /app/view -p /app/admin -p /app" # Bu satır 10 boşlukla başlar
-          docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat-ga:latest analyze ${PHP_CODE_PATHS} --json -o /app/exakat_report.json # Bu satır 10 boşlukla başlar
-          if [ -f exakat_report.json ]; then # Bu satır 10 boşlukla başlar
-            REPORT_SIZE=$(stat -c%s exakat_report.json) # Bu satır 12 boşlukla başlar
-            if [ "$REPORT_SIZE" -lt 100 ]; then # Bu satır 12 boşlukla başlar
-              echo "Exakat raporu çok küçük, analizde sorun olabilir!" # Bu satır 14 boşlukla başlar
-              exit 1 # Bu satır 14 boşlukla başlar
+      - name: Run Exakat Analysis
+        id: exakat
+        run: |
+          PHP_CODE_PATHS="-p /app/controller -p /app/model/common -p /app/pages -p /app/view -p /app/admin -p /app"
+          docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat-ga:latest analyze ${PHP_CODE_PATHS} --json -o /app/exakat_report.json
+          if [ -f exakat_report.json ]; then
+            REPORT_SIZE=$(stat -c%s exakat_report.json)
+            if [ "$REPORT_SIZE" -lt 100 ]; then
+              echo "Exakat raporu çok küçük, analizde sorun olabilir!"
+              exit 1
             fi
-            echo "Exakat analizi başarıyla tamamlandı. Rapor boyutu: $REPORT_SIZE byte." # Bu satır 12 boşlukla başlar
-          else # Bu satır 10 boşlukla başlar
-            echo "Exakat raporu bulunamadı!" # Bu satır 12 boşlukla başlar
-            exit 1 # Bu satır 12 boşlukla başlar
+            echo "Exakat analizi başarıyla tamamlandı. Rapor boyutu: $REPORT_SIZE byte."
+          else
+            echo "Exakat raporu bulunamadı!"
+            exit 1
           fi
 
-      - name: Upload Exakat Report # Bu satır 6 boşlukla başlar
-        uses: actions/upload-artifact@v4 # Bu satır 8 boşlukla başlar
-        with: # Bu satır 8 boşlukla başlar
-          name: exakat-report # Bu satır 10 boşlukla başlar
-          path: exakat_report.json # Bu satır 10 boşlukla başlar
-          if-no-files-found: ignore # Bu satır 10 boşlukla başlar
+      - name: Upload Exakat Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: exakat-report
+          path: exakat_report.json
+          if-no-files-found: ignore
 
-      - name: Generate HTML Report and Upload (Optional) # Bu satır 6 boşlukla başlar
-        run: | # Bu satır 8 boşlukla başlar
-          docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat-ga:latest export ${PHP_CODE_PATHS} --html /app/exakat_report.html # Bu satır 10 boşlukla başlar
-        if: always() # Bu satır 8 boşlukla başlar
+      - name: Generate HTML Report and Upload (Optional)
+        run: |
+          docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat-ga:latest export ${PHP_CODE_PATHS} --html /app/exakat_report.html
+        if: always()
 
-      - name: Upload HTML Report (Optional) # Bu satır 6 boşlukla başlar
-        uses: actions/upload-artifact@v4 # Bu satır 8 boşlukla başlar
-        with: # Bu satır 8 boşlukla başlar
-          name: exakat-html-report # Bu satır 10 boşlukla başlar
-          path: exakat_report.html # Bu satır 10 boşlukla başlar
-          if-no-files-found: ignore # Bu satır 10 boşlukla başlar
+      - name: Upload HTML Report (Optional)
+        uses: actions/upload-artifact@v4
+        with:
+          name: exakat-html-report
+          path: exakat_report.html
+          if-no-files-found: ignore
