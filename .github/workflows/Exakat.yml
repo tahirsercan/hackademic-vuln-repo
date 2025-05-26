@@ -1,0 +1,65 @@
+name: PHP Code Analysis with Exakat
+
+on:
+  push:
+    branches:
+      - main # main branch'e yapılan push'larda çalıştır
+  pull_request:
+    branches:
+      - main # main branch'e yapılan pull request'lerde çalıştır
+
+jobs:
+  exakat_analysis:
+    runs-on: ubuntu-latest # İşlemin çalışacağı ortam
+
+    steps:
+      - name: Checkout Code # Kod deposunu klonla
+        uses: actions/checkout@v4
+
+      - name: Setup PHP # PHP ortamını ayarla (gerekliyse, Exakat Docker kullanıyorsanız genelde direkt gerekmez)
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2' # Projenizin PHP sürümünü buraya yazın
+
+      - name: Run Exakat Analysis # Exakat analizini çalıştır
+        id: exakat
+        run: |
+          # Exakat'ı Docker ile çalıştırmak en yaygın ve önerilen yöntemdir.
+          # İlk çalıştırmada imajı çekecektir.
+          docker run --rm -v "$(pwd):/app" exakat/exakat:latest analyze -p /app --json -o /app/exakat_report.json
+
+          # Analiz sonucunu kontrol etme (örneğin, yüksek öncelikli güvenlik açığı varsa hata ver)
+          # Bu kısım Exakat'ın JSON çıktısını ayrıştırmayı gerektirir.
+          # Basit bir örnek olarak, rapor dosyasının varlığını ve boyutunu kontrol edelim.
+          # Daha gelişmiş bir kontrol için 'jq' gibi bir araçla JSON içeriğini ayrıştırmanız gerekir.
+
+          if [ -f exakat_report.json ]; then
+            REPORT_SIZE=$(stat -c%s exakat_report.json)
+            if [ "$REPORT_SIZE" -lt 100 ]; then # Raporun çok küçük olması genelde hatayı işaret eder
+              echo "Exakat raporu çok küçük, analizde sorun olabilir!"
+              exit 1
+            fi
+            echo "Exakat analizi başarıyla tamamlandı. Rapor boyutu: $REPORT_SIZE byte."
+          else
+            echo "Exakat raporu bulunamadı!"
+            exit 1
+          fi
+
+      - name: Upload Exakat Report # Exakat raporunu artifacts olarak yükle (isteğe bağlı)
+        uses: actions/upload-artifact@v4
+        with:
+          name: exakat-report
+          path: exakat_report.json # Analiz çıktısını buraya ayarlayın
+          if-no-files-found: ignore # Dosya bulunamazsa hatayı göz ardı et
+
+      # İsteğe bağlı: Exakat raporunu okunabilir HTML formatında yükle (ek adım gerektirir)
+      - name: Generate HTML Report and Upload (Optional)
+        run: |
+          docker run --rm -v "$(pwd):/app" exakat/exakat:latest export -p /app --html /app/exakat_report.html
+        if: always() # Analiz başarısız olsa bile raporu oluşturmaya çalış
+      - name: Upload HTML Report (Optional)
+        uses: actions/upload-artifact@v4
+        with:
+          name: exakat-html-report
+          path: exakat_report.html
+          if-no-files-found: ignore
