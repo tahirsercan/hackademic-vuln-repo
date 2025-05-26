@@ -53,9 +53,9 @@ jobs:
           if-no-files-found: ignore
 
       - name: Generate HTML Report and Upload (Optional)
+        if: always()
         run: |
           docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat-ga:latest export ${PHP_CODE_PATHS} --html /app/exakat_report.html
-        if: always()
 
       - name: Upload HTML Report (Optional)
         uses: actions/upload-artifact@v4
