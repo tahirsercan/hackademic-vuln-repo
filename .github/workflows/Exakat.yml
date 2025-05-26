@@ -17,47 +17,55 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Debug: List /app directory contents
-        run: |
-          echo "Listing contents of /app:"
-          ls -RF /app
-          echo "End of /app listing."
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-
       - name: Run Exakat Analysis
         id: exakat
         run: |
-          PHP_CODE_PATHS="-p /app/controller -p /app/model/common -p /app/pages -p /app/view -p /app/admin -p /app"
-          docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat-ga:latest analyze ${PHP_CODE_PATHS} --json -o /app/exakat_report.json
-          if [ -f exakat_report.json ]; then
-            REPORT_SIZE=$(stat -c%s exakat_report.json)
-            if [ "$REPORT_SIZE" -lt 100 ]; then
-              echo "Exakat raporu çok küçük, analizde sorun olabilir!"
-              exit 1
-            fi
-            echo "Exakat analizi başarıyla tamamlandı. Rapor boyutu: $REPORT_SIZE byte."
-          else
-            echo "Exakat raporu bulunamadı!"
+          # Define paths to analyze (relative to repository root)
+          PHP_CODE_PATHS="-p ./controller -p ./model/common -p ./pages -p ./view -p ./admin -p ./"
+          
+          echo "Starting Exakat analysis..."
+          docker run --rm --platform linux/amd64 \
+            -v "$(pwd):/app" \
+            exakat/exakat-ga:latest \
+            analyze ${PHP_CODE_PATHS} --json -o /app/exakat_report.json
+          
+          # Verify report was generated
+          if [ ! -f exakat_report.json ]; then
+            echo "::error::Exakat report file not found!"
             exit 1
           fi
+          
+          REPORT_SIZE=$(stat -c%s exakat_report.json)
+          if [ "$REPORT_SIZE" -lt 100 ]; then
+            echo "::error::Exakat report is too small (${REPORT_SIZE} bytes), potential analysis issue!"
+            exit 1
+          fi
+          
+          echo "Exakat analysis completed successfully. Report size: ${REPORT_SIZE} bytes."
 
       - name: Upload Exakat Report
         uses: actions/upload-artifact@v4
         with:
           name: exakat-report
           path: exakat_report.json
-          if-no-files-found: ignore
+          if-no-files-found: error
 
-      - name: Generate HTML Report and Upload (Optional)
+      - name: Generate and Upload HTML Report
         if: always()
         run: |
-          docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat-ga:latest export ${PHP_CODE_PATHS} --html /app/exakat_report.html
+          PHP_CODE_PATHS="-p ./controller -p ./model/common -p ./pages -p ./view -p ./admin -p ./"
+          docker run --rm --platform linux/amd64 \
+            -v "$(pwd):/app" \
+            exakat/exakat-ga:latest \
+            export ${PHP_CODE_PATHS} --html /app/exakat_report.html
+          
+          # Verify HTML report was generated
+          if [ ! -f exakat_report.html ]; then
+            echo "::warning::HTML report generation failed"
+            exit 0  # Don't fail the job for optional HTML report
+          fi
 
-      - name: Upload HTML Report (Optional)
+      - name: Upload HTML Report
         uses: actions/upload-artifact@v4
         with:
           name: exakat-html-report
