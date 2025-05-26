@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main # main branch'e yapılan push'larda çalıştır
+      - next
   pull_request:
     branches:
       - main # main branch'e yapılan pull request'lerde çalıştır
+      - next
 
 jobs:
   exakat_analysis:
