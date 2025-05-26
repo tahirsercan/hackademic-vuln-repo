@@ -11,22 +11,24 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'  # Projenizin PHP versiyonunu belirtin
+          php-version: '8.2'
           coverage: none
           tools: composer:v2
 
       - name: Install Dependencies
         run: |
-          composer install --prefer-dist --no-progress --no-suggest
+          composer require --dev phpstan/phpstan
+          composer require --dev vimeo/psalm
+          composer install --prefer-dist --no-progress
 
       - name: Run PHPStan
         run: |
-          composer run phpstan -- --memory-limit=1G --error-format=github
+          ./vendor/bin/phpstan analyse --memory-limit=1G --error-format=github
         env:
-          XDEBUG_MODE: coverage  # Xdebug'i devre dışı bırakarak performansı artırır
+          XDEBUG_MODE: off
 
       - name: Run Psalm with Taint Analysis
         run: |
-          composer run psalm -- --taint-analysis --threads=$(nproc) --no-cache
+          ./vendor/bin/psalm --taint-analysis --threads=$(nproc) --no-cache
         env:
           PSALM_ALLOW_XDEBUG: 0
