@@ -3,41 +3,34 @@ name: PHP Code Analysis with Exakat
 on:
   push:
     branches:
-      - main # main branch'e yapılan push'larda çalıştır
-      - next
+      - main
   pull_request:
     branches:
-      - main # main branch'e yapılan pull request'lerde çalıştır
-      - next
+      - main
 
 jobs:
   exakat_analysis:
-    runs-on: ubuntu-latest # İşlemin çalışacağı ortam
+    runs-on: ubuntu-latest # This is an AMD64 runner by default
 
     steps:
-      - name: Checkout Code # Kod deposunu klonla
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup PHP # PHP ortamını ayarla (gerekliyse, Exakat Docker kullanıyorsanız genelde direkt gerekmez)
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2' # Projenizin PHP sürümünü buraya yazın
+          php-version: '8.2' # Adjust to your project's PHP version
 
-      - name: Run Exakat Analysis # Exakat analizini çalıştır
+      - name: Run Exakat Analysis
         id: exakat
         run: |
-          # Exakat'ı Docker ile çalıştırmak en yaygın ve önerilen yöntemdir.
-          # İlk çalıştırmada imajı çekecektir.
-          docker run --rm -v "$(pwd):/app" exakat/exakat:latest analyze -p /app --json -o /app/exakat_report.json
-
-          # Analiz sonucunu kontrol etme (örneğin, yüksek öncelikli güvenlik açığı varsa hata ver)
-          # Bu kısım Exakat'ın JSON çıktısını ayrıştırmayı gerektirir.
-          # Basit bir örnek olarak, rapor dosyasının varlığını ve boyutunu kontrol edelim.
-          # Daha gelişmiş bir kontrol için 'jq' gibi bir araçla JSON içeriğini ayrıştırmanız gerekir.
+          # --- IMPORTANT CHANGE HERE ---
+          # Specify --platform linux/amd64 to ensure the correct image architecture is pulled
+          docker run --rm --platform linux/amd64 -v "$(pwd):/app" exakat/exakat:latest analyze -p /app --json -o /app/exakat_report.json
 
           if [ -f exakat_report.json ]; then
             REPORT_SIZE=$(stat -c%s exakat_report.json)
-            if [ "$REPORT_SIZE" -lt 100 ]; then # Raporun çok küçük olması genelde hatayı işaret eder
+            if [ "$REPORT_SIZE" -lt 100 ]; then # Adjust this threshold if your minimal valid report is larger
               echo "Exakat raporu çok küçük, analizde sorun olabilir!"
               exit 1
             fi
@@ -47,18 +40,20 @@ jobs:
             exit 1
           fi
 
-      - name: Upload Exakat Report # Exakat raporunu artifacts olarak yükle (isteğe bağlı)
+      - name: Upload Exakat Report
         uses: actions/upload-artifact@v4
         with:
           name: exakat-report
-          path: exakat_report.json # Analiz çıktısını buraya ayarlayın
-          if-no-files-found: ignore # Dosya bulunamazsa hatayı göz ardı et
+          path: exakat_report.json
+          if-no-files-found: ignore
 
-      # İsteğe bağlı: Exakat raporunu okunabilir HTML formatında yükle (ek adım gerektirir)
       - name: Generate HTML Report and Upload (Optional)
         run: |
-          docker run --rm -v "$(pwd):/app" exakat/exakat:latest export -p /app --html /app/exakat_report.html
-        if: always() # Analiz başarısız olsa bile raporu oluşturmaya çalış
+          # --- IMPORTANT CHANGE HERE ---
+          # Also specify --platform linux/amd64 for the export command
+          docker run --rm --platform linux/amd64 -v "$(pwd):/app" exakat/exakat:latest export -p /app --html /app/exakat_report.html
+        if: always() # Attempt to generate report even if analysis failed
+
       - name: Upload HTML Report (Optional)
         uses: actions/upload-artifact@v4
         with:
