@@ -1,14 +1,14 @@
 name: PHP Code Analysis with Exakat # Bu satır 0 boşlukla başlar
 
 on: # Bu satır 0 boşlukla başlar
-  push:
-    branches:
-      - main
-      - next
-  pull_request:
-    branches:
-      - main
-      - next
+  push: # Bu satır 2 boşlukla başlar
+    branches: # Bu satır 4 boşlukla başlar
+      - main # Bu satır 6 boşlukla başlar
+      - next # Bu satır 6 boşlukla başlar
+  pull_request: # Bu satır 2 boşlukla başlar
+    branches: # Bu satır 4 boşlukla başlar
+      - main # Bu satır 6 boşlukla başlar
+      - next # Bu satır 6 boşlukla başlar
 
 jobs: # Bu satır 0 boşlukla başlar
   exakat_analysis: # Bu satır 2 boşlukla başlar
@@ -18,7 +18,7 @@ jobs: # Bu satır 0 boşlukla başlar
         uses: actions/checkout@v4 # Bu satır 8 boşlukla başlar
 
       - name: Debug: List /app directory contents # Bu satır 6 boşlukla başlar
-        run: | # Bu satır 8 boşlukla başlar. DİKKAT: '|' işaretinden sonraki ilk boşluktan sonraki tüm satırlar aynı hizada olmalı.
+        run: | # Bu satır 8 boşlukla başlar
           echo "Listing contents of /app:" # Bu satır 10 boşlukla başlar
           ls -RF /app # Bu satır 10 boşlukla başlar
           echo "End of /app listing." # Bu satır 10 boşlukla başlar
@@ -26,7 +26,7 @@ jobs: # Bu satır 0 boşlukla başlar
       - name: Setup PHP # Bu satır 6 boşlukla başlar
         uses: shivammathur/setup-php@v2 # Bu satır 8 boşlukla başlar
         with: # Bu satır 8 boşlukla başlar
-          php-version: '8.2' # Projenizin PHP sürümünü buraya yazın. Bu satır 10 boşlukla başlar.
+          php-version: '8.2' # Bu satır 10 boşlukla başlar
 
       - name: Run Exakat Analysis # Bu satır 6 boşlukla başlar
         id: exakat # Bu satır 8 boşlukla başlar
