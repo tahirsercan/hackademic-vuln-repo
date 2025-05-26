@@ -4,15 +4,15 @@ on:
   push:
     branches:
       - main
-      - next
+      - next # <-- BURAYA EKLENDİ
   pull_request:
     branches:
       - main
-      - next
+      - next # <-- BURAYA EKLENDİ
 
 jobs:
   exakat_analysis:
-    runs-on: ubuntu-latest # This is an AMD64 runner by default
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
@@ -21,18 +21,16 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2' # Adjust to your project's PHP version
+          php-version: '8.2' # Projenizin PHP sürümünü buraya yazın
 
       - name: Run Exakat Analysis
         id: exakat
         run: |
-          # --- IMPORTANT CHANGE HERE ---
-          # Add --pull always to force Docker to re-pull the image, ensuring the correct platform.
-          docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat:latest analyze -p /app --json -o /app/exakat_report.json
+          docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat:2.5.5 analyze -p /app --json -o /app/exakat_report.json
 
           if [ -f exakat_report.json ]; then
             REPORT_SIZE=$(stat -c%s exakat_report.json)
-            if [ "$REPORT_SIZE" -lt 100 ]; then # Adjust this threshold if your minimal valid report is larger
+            if [ "$REPORT_SIZE" -lt 100 ]; then
               echo "Exakat raporu çok küçük, analizde sorun olabilir!"
               exit 1
             fi
@@ -51,10 +49,8 @@ jobs:
 
       - name: Generate HTML Report and Upload (Optional)
         run: |
-          # --- IMPORTANT CHANGE HERE ---
-          # Also add --pull always for the export command.
-          docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat:latest export -p /app --html /app/exakat_report.html
-        if: always() # Attempt to generate report even if analysis failed
+          docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat:2.5.5 export -p /app --html /app/exakat_report.html
+        if: always()
 
       - name: Upload HTML Report (Optional)
         uses: actions/upload-artifact@v4
