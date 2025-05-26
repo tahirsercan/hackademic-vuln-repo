@@ -4,11 +4,9 @@ on:
   push:
     branches:
       - main
-      - next
   pull_request:
     branches:
       - main
-      - next
 
 jobs:
   exakat_analysis:
@@ -27,8 +25,8 @@ jobs:
         id: exakat
         run: |
           # --- IMPORTANT CHANGE HERE ---
-          # Specify --platform linux/amd64 to ensure the correct image architecture is pulled
-          docker run --rm --platform linux/amd64 -v "$(pwd):/app" exakat/exakat:latest analyze -p /app --json -o /app/exakat_report.json
+          # Add --pull always to force Docker to re-pull the image, ensuring the correct platform.
+          docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat:latest analyze -p /app --json -o /app/exakat_report.json
 
           if [ -f exakat_report.json ]; then
             REPORT_SIZE=$(stat -c%s exakat_report.json)
@@ -52,8 +50,8 @@ jobs:
       - name: Generate HTML Report and Upload (Optional)
         run: |
           # --- IMPORTANT CHANGE HERE ---
-          # Also specify --platform linux/amd64 for the export command
-          docker run --rm --platform linux/amd64 -v "$(pwd):/app" exakat/exakat:latest export -p /app --html /app/exakat_report.html
+          # Also add --pull always for the export command.
+          docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat:latest export -p /app --html /app/exakat_report.html
         if: always() # Attempt to generate report even if analysis failed
 
       - name: Upload HTML Report (Optional)
