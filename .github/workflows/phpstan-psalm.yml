@@ -1,0 +1,32 @@
+name: PHP Static Analysis
+
+on: [push, pull_request]
+
+jobs:
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'  # Projenizin PHP versiyonunu belirtin
+          coverage: none
+          tools: composer:v2
+
+      - name: Install Dependencies
+        run: |
+          composer install --prefer-dist --no-progress --no-suggest
+
+      - name: Run PHPStan
+        run: |
+          composer run phpstan -- --memory-limit=1G --error-format=github
+        env:
+          XDEBUG_MODE: coverage  # Xdebug'i devre dışı bırakarak performansı artırır
+
+      - name: Run Psalm with Taint Analysis
+        run: |
+          composer run psalm -- --taint-analysis --threads=$(nproc) --no-cache
+        env:
+          PSALM_ALLOW_XDEBUG: 0
