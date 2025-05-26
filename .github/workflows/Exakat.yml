@@ -18,8 +18,8 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Debug: List /app directory contents
-        run: |
+      - name: Debug: List /app directory contents # This step's name
+        run: | # This 'run:' should be indented exactly 8 spaces relative to the start of the line for 'name:'
           echo "Listing contents of /app:"
           ls -RF /app
           echo "End of /app listing."
@@ -32,11 +32,8 @@ jobs:
       - name: Run Exakat Analysis
         id: exakat
         run: |
-          # Define the paths to your PHP code directories within the container's /app mount.
-          # Adjust these paths if your PHP code is in different subdirectories.
-          PHP_CODE_PATHS="-p /app/controller -p /app/model/common -p /app/pages -p /app/view -p /app/admin -p /app" # Keep these for now
+          PHP_CODE_PATHS="-p /app/controller -p /app/model/common -p /app/pages -p /app/view -p /app/admin -p /app"
 
-          # Run Exakat analysis, passing all identified PHP code paths.
           docker run --rm --platform linux/amd64 --pull always -v "$(pwd):/app" exakat/exakat-ga:latest analyze ${PHP_CODE_PATHS} --json -o /app/exakat_report.json
 
           if [ -f exakat_report.json ]; then
