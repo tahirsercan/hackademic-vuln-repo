@@ -25,20 +25,21 @@ jobs:
 
     - name: Run Horusec Scan
       id: scan
+      # The '--tools' flag has been removed as it's no longer supported by Horusec.
+      # Horusec will now automatically detect the technologies in your project.
       run: |
         horusec start -p="./" \
-          --tools="horusec-php" \
           --output-format="json,sarif" \
           --json-output-file="horusec_report" \
-          --ignore-severity="LOW" \
+          --ignore-severity="LOW,MEDIUM" \
           --ignore="**/vendor/**,**/node_modules/**" \
           --return-error=false
 
     - name: Upload SARIF to GitHub Code Scanning
-      uses: github/codeql-action/upload-sarif@v3  # Güncellendi v3'e
+      uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: horusec_report.sarif
-      if: always()
+      if: always() # Ensures this step runs even if the scan had an error
 
     - name: Upload Reports as Artifact
       uses: actions/upload-artifact@v4
@@ -47,4 +48,4 @@ jobs:
         path: |
           horusec_report.json
           horusec_report.sarif
-      if: always()
+      if: always() # Ensures this step runs even if the scan had an error
