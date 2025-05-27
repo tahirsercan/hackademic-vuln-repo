@@ -11,7 +11,8 @@ jobs:
     name: Run Horusec Security Scan
     runs-on: ubuntu-latest
     permissions:
-      security-events: write  # Code Scanning alerts için gerekli izin
+      security-events: write  # Code Scanning için
+      contents: read         # Checkout için gerekli
     steps:
     - name: Check out code
       uses: actions/checkout@v4
@@ -23,6 +24,7 @@ jobs:
         curl -fsSL https://raw.githubusercontent.com/ZupIT/horusec/main/deployments/scripts/install.sh | bash -s latest
 
     - name: Run Horusec Scan (JSON + SARIF)
+      id: scan
       run: |
         horusec start -p="./" \
           --enable-php="true" \
@@ -32,18 +34,27 @@ jobs:
           --report-type="json,sarif" \
           --severity="HIGH,CRITICAL" \
           --confidence="HIGH" \
-          --false-positive="true"
+          --false-positive="true" \
+          --ignore="**/vendor/**"  # Vendor dizinini ignore et
 
     - name: Upload SARIF to GitHub Code Scanning
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: horusec_report.sarif
-      if: success() || failure()  # Tarama başarısız olsa bile yükle
+      if: always()
 
-    - name: Upload JSON Report as Artifact
-      uses: actions/upload-artifact@v3
+    - name: Upload Reports as Artifact
+      uses: actions/upload-artifact@v4  # Güncel versiyon
       with:
-        name: horusec-security-report
+        name: horusec-security-reports
         path: |
           horusec_report.json
           horusec_report.sarif
+      if: always()
+
+    - name: Check for Critical Findings
+      if: steps.scan.outcome == 'failure'
+      run: |
+        echo "🛑 Kritik güvenlik açıkları tespit edildi!"
+        echo "Lütfen horusec_report.json dosyasını inceleyin"
+        exit 1
