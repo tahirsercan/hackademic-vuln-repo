@@ -23,15 +23,24 @@ jobs:
       run: |
         curl -fsSL https://raw.githubusercontent.com/ZupIT/horusec/main/deployments/scripts/install.sh | bash -s latest
 
-    - name: Run Horusec Scan
+    - name: Run Horusec Scan (Generate JSON and SARIF separately)
       id: scan
-      # The '--tools' flag has been removed as it's no longer supported by Horusec.
-      # Horusec will now automatically detect the technologies in your project.
       run: |
+        # Generate JSON report
         horusec start -p="./" \
-          --output-format="json,sarif" \
-          --json-output-file="horusec_report" \
-          --ignore-severity="LOW,MEDIUM" \
+          --output-format="json" \
+          --json-output-file="horusec_report.json" \
+          --ignore-severity="LOW" \
+          --ignore="**/vendor/**,**/node_modules/**" \
+          --return-error=false
+
+        # Generate SARIF report
+        # Note: The --json-output-file flag is used for SARIF output as well,
+        # as per Horusec's documentation.
+        horusec start -p="./" \
+          --output-format="sarif" \
+          --json-output-file="horusec_report.sarif" \
+          --ignore-severity="LOW" \
           --ignore="**/vendor/**,**/node_modules/**" \
           --return-error=false
 
