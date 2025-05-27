@@ -1,23 +1,52 @@
 name: Semgrep Security Scan
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ "main", "develop", "next" ]
+  pull_request:
+    branches: [ "main", "develop", "next" ]
 
 jobs:
   semgrep-scan:
+    name: Run Semgrep Scan
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write # Gerekli: GitHub Code Scanning için
+      contents: read       # Gerekli: Kodu çekmek için
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Semgrep
         run: |
           python -m pip install semgrep
           semgrep --version
-      
-      - name: Run Semgrep Scan
+
+      - name: Run Semgrep Scan (SARIF Output)
+        id: semgrep_sarif_scan # Adıma özel bir ID veriyoruz
         run: |
-          semgrep --config=p/php --sarif --output=semgrep-results.sarif
-      
-      - name: Upload SARIF results
-        uses: github/codeql-action/upload-sarif@v2
+          # Bu komut SARIF çıktısı üretir
+          semgrep --config=p/php --sarif --output=semgrep-results.sarif .
+        # Hata durumunda bile raporun oluşturulmasını sağlamak için
+        # continue-on-error: true # Eğer Semgrep'in hata kodları yüzünden pipeline'ın durmasını istemiyorsanız
+
+      - name: Run Semgrep Scan (JSON Output)
+        id: semgrep_json_scan # JSON çıktısı için ayrı bir ID
+        run: |
+          # Bu komut JSON çıktısı üretir
+          semgrep --config=p/php --json --output=semgrep-results.json .
+        # continue-on-error: true # Eğer Semgrep'in hata kodları yüzünden pipeline'ın durmasını istemiyorsanız
+
+      - name: Upload SARIF results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: semgrep-results.sarif
+        if: always() # Scan adımı başarısız olsa bile raporu yüklemeyi dene
+
+      - name: Upload Semgrep Reports as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-security-reports
+          path: |
+            semgrep-results.sarif
+            semgrep-results.json
+        if: always() # Raporlar oluşturulmasa bile uyarı ver, hata döndürme
