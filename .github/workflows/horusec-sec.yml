@@ -1,0 +1,49 @@
+name: HorusecSecurityPipeline
+
+on:
+  push:
+    branches: [ "main", "develop", "next" ]
+  pull_request:
+    branches: [ "main", "develop", "next" ]
+
+jobs:
+  horusec-security:
+    name: Run Horusec Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write  # Code Scanning alerts için gerekli izin
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install Horusec
+      run: |
+        curl -fsSL https://raw.githubusercontent.com/ZupIT/horusec/main/deployments/scripts/install.sh | bash -s latest
+
+    - name: Run Horusec Scan (JSON + SARIF)
+      run: |
+        horusec start -p="./" \
+          --enable-php="true" \
+          --enable-dart="false" \
+          --enable-csharp="false" \
+          --output-file="horusec_report" \
+          --report-type="json,sarif" \
+          --severity="HIGH,CRITICAL" \
+          --confidence="HIGH" \
+          --false-positive="true"
+
+    - name: Upload SARIF to GitHub Code Scanning
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: horusec_report.sarif
+      if: success() || failure()  # Tarama başarısız olsa bile yükle
+
+    - name: Upload JSON Report as Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: horusec-security-report
+        path: |
+          horusec_report.json
+          horusec_report.sarif
