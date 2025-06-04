@@ -1,4 +1,4 @@
-name: Psalm Security Scan
+name: Psalm New Security Scan
 
 on:
   push:
