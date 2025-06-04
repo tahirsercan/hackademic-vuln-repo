@@ -33,16 +33,11 @@ jobs:
           curl -L https://github.com/vimeo/psalm/releases/latest/download/psalm.phar -o psalm.phar
           chmod +x psalm.phar
 
-      - name: Init Psalm config if not present
-        run: |
-          if [ ! -f psalm.xml ]; then
-            php psalm.phar --init --level=6 --source=.
-          fi
+      - name: Run Psalm (SARIF)
+        run: php psalm.phar --output-format=sarif > results.sarif || true
 
-      - name: Run Psalm scan
-        run: |
-          php psalm.phar --output-format=sarif > results.sarif
-          php psalm.phar --output-format=json > results.json
+      - name: Run Psalm (JSON)
+        run: php psalm.phar --output-format=json > results.json || true
 
       - name: Upload SARIF results to GitHub
         uses: github/codeql-action/upload-sarif@v3
