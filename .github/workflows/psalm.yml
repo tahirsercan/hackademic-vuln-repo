@@ -6,13 +6,13 @@ on:
   pull_request:
     branches: [ "next" ]
   schedule:
-    - cron: '38 15 * * 6'
+    - cron: '20 1 * * 4'
 
 permissions:
   contents: read
 
 jobs:
-  psalm-security:
+  php-security:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -28,7 +28,7 @@ jobs:
         with:
           php-version: '8.1'
 
-      - name: Install dependencies if composer.json exists
+      - name: Install dependencies (if composer.json exists)
         run: |
           if [ -f composer.json ]; then
             composer install --prefer-dist --no-progress
@@ -38,19 +38,11 @@ jobs:
         run: |
           curl -L https://github.com/vimeo/psalm/releases/latest/download/psalm.phar -o psalm.phar
           chmod +x psalm.phar
-          php psalm.phar --init --level=1 || true
 
-      - name: Install security plugin
+      - name: Run Psalm scan (entire repository)
         run: |
-          if [ -f composer.json ]; then
-            composer require --dev psalm/plugin-security
-            vendor/bin/psalm-plugin enable psalm/plugin-security
-          else
-            echo '<plugins><pluginClass class="Psalm\\Plugin\\SecurityPlugin" /></plugins>' > .psalm.xml
-          fi
-
-      - name: Run Psalm with SARIF output
-        run: php psalm.phar --output-format=sarif > results.sarif
+          php psalm.phar --output-format=sarif > results.sarif
+          php psalm.phar --output-format=json > results.json
 
       - name: Upload Security Analysis results to GitHub
         uses: github/codeql-action/upload-sarif@v3
