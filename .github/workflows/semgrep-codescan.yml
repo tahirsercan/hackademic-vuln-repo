@@ -22,7 +22,7 @@ jobs:
           python -m pip install semgrep
           semgrep --version
 
-      # --- PHP Güvenlik Taraması (p/php) ---
+      # --- PHP Security Scan (p/php) ---
       - name: Run Semgrep Scan (PHP, SARIF Output)
         run: |
           semgrep --config=p/php --sarif --output=semgrep-php.sarif .
@@ -31,7 +31,7 @@ jobs:
         run: |
           semgrep --config=p/php --json --output=semgrep-php.json .
 
-      # --- Secrets Taraması (p/secrets) ---
+      # --- Secrets Scan (p/secrets) ---
       - name: Run Semgrep Scan (Secrets, SARIF Output)
         run: |
           semgrep --config=p/secrets --sarif --output=semgrep-secrets.sarif .
@@ -40,20 +40,22 @@ jobs:
         run: |
           semgrep --config=p/secrets --json --output=semgrep-secrets.json .
 
-      # --- SARIF Sonuçlarını GitHub Code Scanning'e Yükle ---
+      # --- Upload SARIF results to GitHub Code Scanning ---
       - name: Upload PHP SARIF results
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: semgrep-php.sarif
+          category: semgrep-php
         if: always()
 
       - name: Upload Secrets SARIF results
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: semgrep-secrets.sarif
+          category: semgrep-secrets
         if: always()
 
-      # --- Raporları Artifact olarak yükle ---
+      # --- Upload all reports as artifact ---
       - name: Upload Semgrep Reports as Artifact
         uses: actions/upload-artifact@v4
         with:
