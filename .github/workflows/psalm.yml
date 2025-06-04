@@ -1,42 +1,50 @@
-name: Psalm Security Scan
-
-on:
-  push:
-    branches: [next]
-  pull_request:
-    branches: [next]
-  schedule:
-    - cron: '16 22 * * 1'
-
-permissions:
-  contents: read
-
-jobs:
-  php-security:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-      actions: read
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: composer install --no-progress --no-suggest
-
-      - name: Run Psalm - generate SARIF and JSON outputs
-        run: |
-          ./vendor/bin/psalm --output-format=sarif > results.sarif
-          ./vendor/bin/psalm --output-format=json > results.json
-
-      - name: Upload SARIF results to GitHub
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: results.sarif
-
-      - name: Upload JSON results as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: psalm-json-results
-          path: results.json
+{
+  "name": "Psalm Security Scan",
+  "on": {
+    "push": {
+      "branches": [
+        "next"
+      ]
+    },
+    "pull_request": {
+      "branches": [
+        "next"
+      ]
+    },
+    "schedule": [
+      {
+        "cron": "16 22 * * 1"
+      }
+    ]
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "jobs": {
+    "php-security": {
+      "runs-on": "ubuntu-latest",
+      "permissions": {
+        "contents": "read",
+        "security-events": "write",
+        "actions": "read"
+      },
+      "steps": [
+        {
+          "name": "Checkout code",
+          "uses": "actions/checkout@v4"
+        },
+        {
+          "name": "Psalm Security Scan",
+          "uses": "psalm/psalm-github-security-scan@f3e6fd9432bc3e44aec078572677ce9d2ef9c287"
+        },
+        {
+          "name": "Upload Security Analysis results to GitHub",
+          "uses": "github/codeql-action/upload-sarif@v3",
+          "with": {
+            "sarif_file": "results.sarif"
+          }
+        }
+      ]
+    }
+  }
+}
