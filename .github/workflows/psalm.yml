@@ -1,4 +1,4 @@
-name: Psalm Security Scan (Custom JSON Upload)
+name: Psalm Security Scan (SARIF + JSON Upload)
 
 on:
   push:
@@ -11,8 +11,8 @@ on:
     - cron: '16 22 * * 1'
 
 permissions:
-  contents: read # For actions/checkout to fetch the code
-  # security-events: write # Not strictly needed if not uploading SARIF to Code Scanning
+  contents: read
+  security-events: write  # SARIF upload için gerekli
 
 jobs:
   php-security:
@@ -34,20 +34,19 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-progress --no-interaction
 
-      - name: Run Psalm Static Analysis (Output JSON)
-        uses: psalm/psalm-github-actions@2.3.0
-        with:
-          security_analysis: true
-          show_info: false
-          composer_require_dev: true
-          # Change report_file to .json. NOTE: This might not be a standard JSON format,
-          # but rather Psalm's internal JSON representation.
-          report_file: results.json
-          # composer_ignore_platform_reqs: true
+      - name: Run Psalm Static Analysis (Output SARIF)
+        run: ./vendor/bin/psalm --output-format=sarif > results.sarif
 
-      - name: Upload Custom JSON Report as Artifact
-        uses: actions/upload-artifact@v4 # Use upload-artifact for general files
+      - name: Run Psalm Static Analysis (Output JSON)
+        run: ./vendor/bin/psalm --output-format=json > results.json
+
+      - name: Upload SARIF results to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+
+      - name: Upload JSON report as artifact
+        uses: actions/upload-artifact@v4
         with:
           name: psalm-json-report
-          path: results.json # Path to your generated JSON file
-          # retention-days: 5 # Optional: how long to keep the artifact
+          path: results.json
