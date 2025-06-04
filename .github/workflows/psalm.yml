@@ -26,7 +26,7 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: '8.2'
 
       - name: Install dependencies (if composer.json exists)
         run: |
@@ -39,7 +39,7 @@ jobs:
           curl -L https://github.com/vimeo/psalm/releases/latest/download/psalm.phar -o psalm.phar
           chmod +x psalm.phar
 
-      - name: Run Psalm scan (entire repository)
+      - name: Run Psalm scan
         run: |
           php psalm.phar --output-format=sarif > results.sarif
           php psalm.phar --output-format=json > results.json
