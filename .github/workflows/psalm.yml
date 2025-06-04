@@ -28,23 +28,23 @@ jobs:
         with:
           php-version: '8.2'
 
-      - name: Install dependencies (if composer.json exists)
-        run: |
-          if [ -f composer.json ]; then
-            composer install --prefer-dist --no-progress
-          fi
-
       - name: Download Psalm
         run: |
           curl -L https://github.com/vimeo/psalm/releases/latest/download/psalm.phar -o psalm.phar
           chmod +x psalm.phar
+
+      - name: Init Psalm config if not present
+        run: |
+          if [ ! -f psalm.xml ]; then
+            php psalm.phar --init --level=6 --source=.
+          fi
 
       - name: Run Psalm scan
         run: |
           php psalm.phar --output-format=sarif > results.sarif
           php psalm.phar --output-format=json > results.json
 
-      - name: Upload Security Analysis results to GitHub
+      - name: Upload SARIF results to GitHub
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
