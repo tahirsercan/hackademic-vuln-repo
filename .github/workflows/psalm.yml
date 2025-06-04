@@ -1,49 +1,49 @@
-{
-  "name": "Psalm Security Scan",
-  "on": {
-    "push": {
-      "branches": [
-        "next"
-      ]
-    },
-    "pull_request": {
-      "branches": [
-        "next"
-      ]
-    }
-  },
-  "permissions": {
-    "contents": "read",
-    "security-events": "write"
-  },
-  "jobs": {
-    "php-security": {
-      "name": "Psalm – Static Analysis for PHP",
-      "runs-on": "ubuntu-latest",
-      "steps": [
-        {
-          "name": "Checkout code",
-          "uses": "actions/checkout@v4"
-        },
-        {
-          "name": "Run Psalm Static Analysis",
-          "uses": "psalm/psalm-github-actions@2.3.0",
-          "with": {
-            "security_analysis": true,
-            "show_info": false,
-            "composer_require_dev": true,
-            "report_file": "results.json",
-            "composer_ignore_platform_reqs": true
-          }
-        },
-        {
-          "name": "Upload SARIF results to GitHub",
-          "uses": "github/codeql-action/upload-sarif@v3",
-          "with": {
-            "sarif_file": "results.sarif"
-          }
-        }
-      ]
-    }
-  }
-}
+name: Psalm Security Scan
+
+on:
+  push:
+    branches:
+      - next
+  pull_request:
+    branches:
+      - next
+  schedule:
+    - cron: '16 22 * * 1' # Runs every Monday at 22:16 UTC
+
+permissions:
+  contents: read # For actions/checkout to fetch the code
+  security-events: write # For github/codeql-action/upload-sarif to upload the results
+
+jobs:
+  php-security:
+    name: Psalm – Static Analysis for PHP
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2' # Specify your PHP version (e.g., '8.2', '8.3')
+          extensions: mbstring, dom, xml, pdo, pdo_mysql # Add necessary PHP extensions for your project
+          coverage: none # Not needed for Psalm security scan
+          tools: composer:v2 # Ensure Composer is available
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Run Psalm Static Analysis
+        uses: psalm/psalm-github-actions@2.3.0
+        with:
+          security_analysis: true # Enables Psalm's security analysis features
+          show_info: false # Hides informational messages, focusing on errors/warnings
+          composer_require_dev: true # Installs dev dependencies, often required for Psalm
+          report_file: results.sarif # Specifies the output file in SARIF format
+          # composer_ignore_platform_reqs: true # Uncomment if you need to ignore platform requirements
+
+      - name: Upload SARIF results to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif # This must match the report_file from the Psalm step
