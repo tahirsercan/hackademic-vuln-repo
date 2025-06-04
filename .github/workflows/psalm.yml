@@ -1,15 +1,9 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 name: Psalm Security Scan
 
 on:
   push:
     branches: [ "next" ]
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ "next" ]
   schedule:
     - cron: '38 15 * * 6'
@@ -18,19 +12,45 @@ permissions:
   contents: read
 
 jobs:
-  php-security:
+  psalm-security:
     runs-on: ubuntu-latest
     permissions:
-      contents: read # for actions/checkout to fetch code
-      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+      contents: read
+      security-events: write
+      actions: read
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Psalm Security Scan
-        uses: psalm/psalm-github-security-scan@f3e6fd9432bc3e44aec078572677ce9d2ef9c287
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+
+      - name: Install dependencies if composer.json exists
+        run: |
+          if [ -f composer.json ]; then
+            composer install --prefer-dist --no-progress
+          fi
+
+      - name: Download Psalm
+        run: |
+          curl -L https://github.com/vimeo/psalm/releases/latest/download/psalm.phar -o psalm.phar
+          chmod +x psalm.phar
+          php psalm.phar --init --level=1 || true
+
+      - name: Install security plugin
+        run: |
+          if [ -f composer.json ]; then
+            composer require --dev psalm/plugin-security
+            vendor/bin/psalm-plugin enable psalm/plugin-security
+          else
+            echo '<plugins><pluginClass class="Psalm\\Plugin\\SecurityPlugin" /></plugins>' > .psalm.xml
+          fi
+
+      - name: Run Psalm with SARIF output
+        run: php psalm.phar --output-format=sarif > results.sarif
 
       - name: Upload Security Analysis results to GitHub
         uses: github/codeql-action/upload-sarif@v3
