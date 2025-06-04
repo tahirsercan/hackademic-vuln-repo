@@ -1,4 +1,4 @@
-name: Psalm New Security Scan
+name: Psalm Security Scan
 
 on:
   push:
@@ -36,7 +36,7 @@ jobs:
           sarif_file: results.sarif
 
       - name: Upload JSON results as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: psalm-json-results
           path: results.json
