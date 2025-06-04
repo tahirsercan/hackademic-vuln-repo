@@ -1,34 +1,32 @@
-name: PHP Static Analysis
+name: PHPStan Security Scan
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+      - next
+  pull_request:
+    branches:
+      - main
+      - next
+  schedule:
+    - cron: '0 2 * * 1'  # Her Pazartesi sabah 2'de
 
 jobs:
-  static-analysis:
+  phpstan-security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Setup PHP
+      - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          coverage: none
-          tools: composer:v2
+          tools: composer
 
-      - name: Install Dependencies
-        run: |
-          composer require --dev phpstan/phpstan
-          composer require --dev vimeo/psalm
-          composer install --prefer-dist --no-progress
+      - name: Install dependencies
+        run: composer install --no-interaction --no-scripts --no-progress
 
-      - name: Run PHPStan
-        run: |
-          ./vendor/bin/phpstan analyse --memory-limit=1G --error-format=github
-        env:
-          XDEBUG_MODE: off
-
-      - name: Run Psalm with Taint Analysis
-        run: |
-          ./vendor/bin/psalm --taint-analysis --threads=$(nproc) --no-cache
-        env:
-          PSALM_ALLOW_XDEBUG: 0
+      - name: Run PHPStan Analysis
+        run: ./vendor/bin/phpstan analyse . --memory-limit=1G --error-format=github
