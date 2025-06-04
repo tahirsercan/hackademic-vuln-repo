@@ -11,8 +11,9 @@ jobs:
     name: Run Semgrep Scan
     runs-on: ubuntu-latest
     permissions:
-      security-events: write # Gerekli: GitHub Code Scanning için
-      contents: read       # Gerekli: Kodu çekmek için
+      security-events: write
+      contents: read
+
     steps:
       - uses: actions/checkout@v4
 
@@ -21,32 +22,45 @@ jobs:
           python -m pip install semgrep
           semgrep --version
 
-      - name: Run Semgrep Scan (SARIF Output)
-        id: semgrep_sarif_scan # Adıma özel bir ID veriyoruz
+      # --- PHP Güvenlik Taraması (p/php) ---
+      - name: Run Semgrep Scan (PHP, SARIF Output)
         run: |
-          # Bu komut SARIF çıktısı üretir
-          semgrep --config=p/php --sarif --output=semgrep-results.sarif .
-        # Hata durumunda bile raporun oluşturulmasını sağlamak için
-        # continue-on-error: true # Eğer Semgrep'in hata kodları yüzünden pipeline'ın durmasını istemiyorsanız
+          semgrep --config=p/php --sarif --output=semgrep-php.sarif .
 
-      - name: Run Semgrep Scan (JSON Output)
-        id: semgrep_json_scan # JSON çıktısı için ayrı bir ID
+      - name: Run Semgrep Scan (PHP, JSON Output)
         run: |
-          # Bu komut JSON çıktısı üretir
-          semgrep --config=p/php --json --output=semgrep-results.json .
-        # continue-on-error: true # Eğer Semgrep'in hata kodları yüzünden pipeline'ın durmasını istemiyorsanız
+          semgrep --config=p/php --json --output=semgrep-php.json .
 
-      - name: Upload SARIF results to GitHub Code Scanning
+      # --- Secrets Taraması (p/secrets) ---
+      - name: Run Semgrep Scan (Secrets, SARIF Output)
+        run: |
+          semgrep --config=p/secrets --sarif --output=semgrep-secrets.sarif .
+
+      - name: Run Semgrep Scan (Secrets, JSON Output)
+        run: |
+          semgrep --config=p/secrets --json --output=semgrep-secrets.json .
+
+      # --- SARIF Sonuçlarını GitHub Code Scanning'e Yükle ---
+      - name: Upload PHP SARIF results
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: semgrep-results.sarif
-        if: always() # Scan adımı başarısız olsa bile raporu yüklemeyi dene
+          sarif_file: semgrep-php.sarif
+        if: always()
 
+      - name: Upload Secrets SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep-secrets.sarif
+        if: always()
+
+      # --- Raporları Artifact olarak yükle ---
       - name: Upload Semgrep Reports as Artifact
         uses: actions/upload-artifact@v4
         with:
           name: semgrep-security-reports
           path: |
-            semgrep-results.sarif
-            semgrep-results.json
-        if: always() # Raporlar oluşturulmasa bile uyarı ver, hata döndürme
+            semgrep-php.sarif
+            semgrep-php.json
+            semgrep-secrets.sarif
+            semgrep-secrets.json
+        if: always()
