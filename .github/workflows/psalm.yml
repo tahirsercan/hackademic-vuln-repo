@@ -1,4 +1,4 @@
-name: Psalm Security Scan (SARIF + JSON Upload)
+name: Psalm Security Scan (with SARIF upload)
 
 on:
   push:
@@ -12,41 +12,33 @@ on:
 
 permissions:
   contents: read
-  security-events: write  # SARIF upload için gerekli
 
 jobs:
   php-security:
-    name: Psalm – Static Analysis for PHP
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: mbstring, dom, xml, pdo, pdo_mysql
-          coverage: none
-          tools: composer:v2
+      - name: Install dependencies
+        run: composer install --no-progress --no-suggest
 
-      - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction
-
-      - name: Run Psalm Static Analysis (Output SARIF)
-        run: ./vendor/bin/psalm --output-format=sarif > results.sarif
-
-      - name: Run Psalm Static Analysis (Output JSON)
-        run: ./vendor/bin/psalm --output-format=json > results.json
+      - name: Run Psalm and generate SARIF and JSON outputs
+        run: |
+          ./vendor/bin/psalm --output-format=sarif > results.sarif
+          ./vendor/bin/psalm --output-format=json > results.json
 
       - name: Upload SARIF results to GitHub
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
 
-      - name: Upload JSON report as artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload JSON results as artifact
+        uses: actions/upload-artifact@v3
         with:
-          name: psalm-json-report
+          name: psalm-json-results
           path: results.json
